@@ -6,9 +6,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: 'sm' | 'md' | 'lg';
 }
 
-/**
- * Reusable button component with consistent styling
- */
+
 export const Button = ({
   children,
   variant = 'primary',
@@ -17,14 +15,14 @@ export const Button = ({
   ...props
 }: ButtonProps) => {
   const baseClasses =
-    'font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed';
+    'font-bold rounded-none transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider';
 
   const variantClasses = {
     primary:
-      'text-white bg-blue-600 hover:bg-blue-700 focus:ring-blue-500',
+      'text-black bg-white hover:bg-gray-200 focus:ring-white border-2 border-white',
     secondary:
-      'text-white bg-purple-600 hover:bg-purple-700 focus:ring-purple-500',
-    danger: 'text-white bg-red-600 hover:bg-red-700 focus:ring-red-500',
+      'text-white bg-black hover:bg-gray-900 focus:ring-white border-2 border-white',
+    danger: 'text-white bg-black hover:bg-gray-900 focus:ring-white border-2 border-white',
   };
 
   const sizeClasses = {

@@ -20,7 +20,6 @@ export const ImageUploader = ({
     try {
       await onFileSelect(file);
     } catch (error) {
-      // Error handling is done in the hook
       console.error('File upload error:', error);
     }
   };
@@ -30,7 +29,7 @@ export const ImageUploader = ({
   };
 
   return (
-    <div className="p-8 border-2 border-dashed border-blue-500 rounded-lg text-center mb-8 bg-gray-800/50">
+    <div className="p-8 border-4 border-dashed border-white text-center mb-8 bg-black">
       <input
         ref={fileInputRef}
         type="file"
@@ -47,7 +46,7 @@ export const ImageUploader = ({
         {isLoading ? 'Processing...' : 'Upload Image'}
       </Button>
       {isLoading && (
-        <p className="mt-4 text-gray-400">
+        <p className="mt-4 text-white font-semibold">
           Slicing image into puzzle pieces...
         </p>
       )}

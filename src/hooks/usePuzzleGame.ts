@@ -6,80 +6,117 @@ import { shufflePieces } from '../utils/shuffle';
 interface UsePuzzleGameReturn {
   pieces: PuzzlePiece[];
   isComplete: boolean;
+  isSolved: boolean;
   setPieces: (pieces: PuzzlePiece[]) => void;
   shuffle: () => void;
   reset: () => void;
+  resetGame: () => void;
   handleDragEnd: (event: DragEndEvent) => void;
 }
 
-/**
- * Custom hook for managing puzzle game state and logic
- * @param initialPieces - Initial puzzle pieces array
- * @returns Object containing game state and handlers
- */
 export const usePuzzleGame = (
   initialPieces: PuzzlePiece[] = []
 ): UsePuzzleGameReturn => {
-  const [pieces, setPieces] = useState<PuzzlePiece[]>(initialPieces);
+  const [pieces, setPiecesState] = useState<PuzzlePiece[]>(initialPieces);
+  const [hasBeenPlayed, setHasBeenPlayed] = useState(false);
+
+  const setPieces = useCallback((newPieces: PuzzlePiece[]) => {
+    if (newPieces.length > 0) {
+      const shuffled = shufflePieces(newPieces);
+      setPiecesState(shuffled);
+      setHasBeenPlayed(true);
+    } else {
+      setPiecesState(newPieces);
+      setHasBeenPlayed(false);
+    }
+  }, []);
 
   const shuffle = useCallback(() => {
     if (pieces.length > 0) {
       const shuffled = shufflePieces(pieces);
-      setPieces(shuffled);
+      setPiecesState(shuffled);
+      setHasBeenPlayed(true);
     }
   }, [pieces]);
 
   const reset = useCallback(() => {
-    setPieces(initialPieces);
+    setPiecesState(initialPieces);
+    setHasBeenPlayed(false);
   }, [initialPieces]);
 
-  /**
-   * Handles drag end event and updates piece positions
-   * Swaps the currentPos values of the dragged piece and the target piece
-   */
+  const resetGame = useCallback(() => {
+    if (pieces.length > 0) {
+      const shuffled = shufflePieces(pieces);
+      setPiecesState(shuffled);
+      setHasBeenPlayed(true);
+    }
+  }, [pieces]);
+
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       const { active, over } = event;
 
-      if (!over || active.id === over.id) {
+      if (!over) {
         return;
       }
 
-      // Find the two pieces being swapped
       const activePiece = pieces.find((piece) => piece.id === active.id);
-      const overPiece = pieces.find((piece) => piece.id === over.id);
-
-      if (!activePiece || !overPiece) {
+      if (!activePiece) {
         return;
       }
 
-      // Swap the currentPos values
+      let targetPosition: number;
+
+      if (typeof over.id === 'string' && over.id.startsWith('cell-')) {
+        const positionStr = over.id.replace('cell-', '');
+        targetPosition = parseInt(positionStr, 10);
+      } else {
+        const overPiece = pieces.find((piece) => piece.id === over.id);
+        if (!overPiece) {
+          return;
+        }
+        targetPosition = overPiece.currentPos;
+      }
+
+      if (activePiece.currentPos === targetPosition) {
+        return;
+      }
+
+      const targetPiece = pieces.find(
+        (piece) => piece.currentPos === targetPosition
+      );
+
       const updatedPieces = pieces.map((piece) => {
         if (piece.id === activePiece.id) {
-          return { ...piece, currentPos: overPiece.currentPos };
+          return { ...piece, currentPos: targetPosition };
         }
-        if (piece.id === overPiece.id) {
+        if (targetPiece && piece.id === targetPiece.id) {
           return { ...piece, currentPos: activePiece.currentPos };
         }
         return piece;
       });
 
-      setPieces(updatedPieces);
+      setPiecesState(updatedPieces);
+      setHasBeenPlayed(true);
     },
     [pieces]
   );
 
-  // Check if puzzle is complete (all pieces in correct positions)
-  const isComplete = pieces.every(
-    (piece) => piece.currentPos === piece.correctPos
-  );
+  const isComplete =
+    hasBeenPlayed &&
+    pieces.length > 0 &&
+    pieces.every((piece) => piece.currentPos === piece.correctPos);
+
+  const isSolved = isComplete;
 
   return {
     pieces,
     isComplete,
+    isSolved,
     setPieces,
     shuffle,
     reset,
+    resetGame,
     handleDragEnd,
   };
 };

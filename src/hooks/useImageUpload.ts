@@ -2,23 +2,23 @@ import { useState } from 'react';
 import type { PuzzlePiece } from '../types/puzzle';
 import { imageSlicer } from '../utils/imageSlicer';
 
+interface UploadResult {
+  pieces: PuzzlePiece[];
+  originalImageUrl: string;
+}
+
 interface UseImageUploadReturn {
   isLoading: boolean;
   error: string | null;
-  uploadImage: (file: File) => Promise<PuzzlePiece[]>;
+  uploadImage: (file: File) => Promise<UploadResult>;
   clearError: () => void;
 }
 
-/**
- * Custom hook for handling image upload and slicing logic
- * @returns Object containing upload state and handlers
- */
 export const useImageUpload = (): UseImageUploadReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const uploadImage = async (file: File): Promise<PuzzlePiece[]> => {
-    // Validate file type
+  const uploadImage = async (file: File): Promise<UploadResult> => {
     if (!file.type.startsWith('image/')) {
       const errorMessage = 'Please select a valid image file';
       setError(errorMessage);
@@ -29,16 +29,14 @@ export const useImageUpload = (): UseImageUploadReturn => {
     setError(null);
 
     try {
-      // Create object URL from the file
       const imageUrl = URL.createObjectURL(file);
 
-      // Slice the image into puzzle pieces
       const pieces = await imageSlicer(imageUrl, 3);
 
-      // Clean up object URL
-      URL.revokeObjectURL(imageUrl);
-
-      return pieces;
+      return {
+        pieces,
+        originalImageUrl: imageUrl,
+      };
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : 'Failed to process image';

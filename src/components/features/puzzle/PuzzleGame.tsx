@@ -1,37 +1,52 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { usePuzzleGame } from '../../../hooks/usePuzzleGame';
 import { useImageUpload } from '../../../hooks/useImageUpload';
+import { useImagePreview } from '../../../hooks/useImagePreview';
 import { ImageUploader } from './ImageUploader';
 import { PuzzleHeader } from './PuzzleHeader';
 import { PuzzleGrid } from './PuzzleGrid';
+import { WinMessage } from './WinMessage';
 import { ErrorMessage } from '../../common/ErrorMessage';
 
-/**
- * Container component that orchestrates puzzle game logic
- * Uses hooks for state management and business logic
- */
 export const PuzzleGame = () => {
-  const { pieces, isComplete, setPieces, shuffle, handleDragEnd } =
+  const { pieces, isComplete, isSolved, setPieces, shuffle, resetGame, handleDragEnd } =
     usePuzzleGame();
   const { isLoading, error, uploadImage, clearError } = useImageUpload();
+  const { isPreviewing, showPreview } = useImagePreview();
+  const [originalImageUrl, setOriginalImageUrl] = useState<string>('');
 
   const handleFileSelect = async (file: File) => {
     try {
-      const newPieces = await uploadImage(file);
+      if (originalImageUrl) {
+        URL.revokeObjectURL(originalImageUrl);
+      }
+
+      const { pieces: newPieces, originalImageUrl: imageUrl } =
+        await uploadImage(file);
       setPieces(newPieces);
+      setOriginalImageUrl(imageUrl);
     } catch (err) {
-      // Error is handled by the hook
       setPieces([]);
+      if (originalImageUrl) {
+        URL.revokeObjectURL(originalImageUrl);
+      }
+      setOriginalImageUrl('');
     }
   };
 
-  // Clear error when pieces are successfully loaded
   useEffect(() => {
     if (pieces.length > 0 && error) {
       clearError();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pieces.length, error]);
+
+  useEffect(() => {
+    return () => {
+      if (originalImageUrl) {
+        URL.revokeObjectURL(originalImageUrl);
+      }
+    };
+  }, [originalImageUrl]);
 
   return (
     <>
@@ -44,11 +59,19 @@ export const PuzzleGame = () => {
           <PuzzleHeader
             pieceCount={pieces.length}
             onShuffle={shuffle}
+            onPreview={showPreview}
             isComplete={isComplete}
           />
-          <PuzzleGrid pieces={pieces} onDragEnd={handleDragEnd} />
+          <PuzzleGrid
+            pieces={pieces}
+            onDragEnd={handleDragEnd}
+            previewImageUrl={originalImageUrl}
+            isPreviewing={isPreviewing}
+          />
         </>
       )}
+
+      {isSolved && <WinMessage onReset={resetGame} />}
     </>
   );
 };
